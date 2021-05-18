@@ -1,0 +1,40 @@
+## Harjoitustyöraportti
+
+Palauttajat (max 3): N.N,  N.N ja N.N
+Pisteitä yhteensä: 3.
+
+## Ongelma 1
+Tyyppi:   Polkuinjektio
+Sijainti: delete_file()
+Kuvaus:
+
+Aliohjelmassa delete_file ei tarkasteta käyttäjän syöttämää polkua
+millään tavalla. Tämä mahdollistaa sen, että käyttäjä tuhoaa minkä
+tahansa tiedoston, esimerkiksi toisen käyttäjän tiedoston tai vaikkapa
+jonkin järjestelmätiedoston.
+
+### Esimerkkihyökkäys: 
+
+1) Kirjaudu sisään käyttäjänä "sam".
+2) Tee pyyntö /delete_file?file=../sue/tiedosto.txt
+3) Tulos: Suen tiedosto tuhotaan
+
+### Korjaus:
+
+Commit: <git hash>
+
+Korjasin tämän näin... 
+
+Korjaus toimii koska... 
+
+Korjaus estää uuden polkuinjektion syntymisen, sillä uutta reittiä luotaessa...
+
+### Pisteet(3pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
+1pt vikatyypin eliminoimisesta
+
+## Ongelma 2
+
+...
