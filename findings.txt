@@ -1,7 +1,9 @@
 ## Harjoitustyöraportti
 
-Palauttajat (max 3): N.N,  N.N ja N.N
-Pisteitä yhteensä: 3.
+Palauttajat (max 3): Toni Moilanen
+Pisteitä yhteensä: 0
+
+
 
 ## Ongelma 1
 Tyyppi:   Polkuinjektio
@@ -35,6 +37,58 @@ Korjaus estää uuden polkuinjektion syntymisen, sillä uutta reittiä luotaessa
 1pt vian korjaamisesta
 1pt vikatyypin eliminoimisesta
 
-## Ongelma 2
 
-...
+
+## Ongelma 2
+Tyyppi: Polkuinjektio
+Sijainti: login()
+Kuvaus:
+
+login-funktion autentikointi mahdollistaa kirjautumisen palvelimelle ilman perustettua tunnusta.
+Tämän lisäksi funkiosta löytyvä käyttäjän kansion polku mahdollistaa tämän seurauksena polkuinjektion.
+Molemmat seikat ovat epätoivottua toiminnallisuutta, joten login funktio tulee tehdä uudelleen.
+
+Hyökkäys toimii siitä syystä, että autentikointi on toteutettu todella huonosti. "if username" tarkistaa
+ensin, että onko käyttäjänimi syötetty. Tämän jälkeen tarkistetaan "if users.get(username) == password".
+Jos käyttäjänimeä ei ole perustettu, niin tämä ehtolause toteutuu.
+
+Tässä on lisäksi huomioitava se, että mikäli palvelimelle olisi mahdollista luoda käyttäjätunnuksia, niin
+hyökkääjä voisi tehdä uusia tunnuksia ja niiden kautta toteuttaa saman polkuinjektion. Tästä syystä myöskin
+käyttäjänimien merkkejä olisi hyvä rajoittaa.
+
+### Esimerkkihyökkäys:
+
+1) Syötetään osoite localhost:5000/login?user=../WebData/sue
+2) Tulos: Päästään palvelimelle ja käsiksi käyttäjän sue tiedostoihin
+
+### Korjaus:
+
+Commit: <git hash>
+
+
+
+## Ongelma 3
+Tyyppi: Shell-injektio
+Sijainti: checkerLoop()
+Kuvaus:
+
+filename = queue.get(). Käyttäjä voi antaa filenameksi mitä vain, jolloin syntyy injektiolle mahdollisuus,
+sillä filename syötetään suoraan shelli käskyyn. Tämä tapahtuu kohdassa:
+
+res = subprocess.run(
+            "file %s" % filename,
+            shell=True,
+            timeout=15,
+            stdout=subprocess.PIPE)
+
+### Esimerkkihyökkäys:
+1) Käyttäjä syöttää palvelimelle tiedoston, jonka nimi on: nimi | ls
+2) Tulos: Palvelin suorittaa |-merkin komennon
+
+### Korjaus:
+
+Commit: <git hash>
+
+
+
+## Ongelma 4

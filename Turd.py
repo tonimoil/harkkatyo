@@ -5,6 +5,7 @@ import queue
 import subprocess
 import threading
 import time
+import sys #logaamista varten
 
 
 # Load configuration file
@@ -62,7 +63,7 @@ def login():
     username = request.args.get('user')
     password = request.args.get('password')
     if username:
-
+        print('Hello', file=sys.stderr)
         if users.get(username) == password:
             
             resp = make_response("""
