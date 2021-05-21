@@ -3,6 +3,77 @@
 Palauttajat (max 3): Toni Moilanen
 Pisteitä yhteensä: 0
 
+## Ongelma 1
+Tyyppi: Autentikointi
+Sijainti: Koko sovellus
+Kuvaus:
+
+Sovellus käyttää keksejä käyttäjän tunnistamiseen ja seuraamiseen sivulta toiselle.
+Keksejä voidaan kuitenkin manipuloida, minkä seurauksena esimerkiksi käyttäjää 
+voidaan vaihtaa ilman autentikointia. Tämän lisäksi joillekin sivuille pääsee ilman
+kirjautumista. 
+
+### Esimerkkihyökkäys:
+1) Kirjaudu käyttäjällä sue
+2) Vaihda kirjautumisen jälkeen keksin username arvo lion
+3) Tulos: Päästään käyttäjän lion tunnukselle
+
+### Korjaus:
+Tehdään järjestelmään autentikointi.
+
+Commit: <git hash>
+
+Korjasin tämän käyttämällä Flaskin Flask-Login moduulia. Moduulissa on session
+seurantaan toiminnot, jolloin sisään kirjautumista voidaan seurata luotettavasti.
+
+Uskon korjauksen toimivan, sillä Flask-Login on Flaskin suositeltu moduuli sessioiden
+seuraamiseen.
+
+Korjaus rajoittaa keksien avulla käyttäjien manipuloinnin sekä auttaa seuraamaan, että
+kuka sivustolla on kirjautuneena.
+
+### Pisteet(3pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
+1pt vikatyypin eliminoimisesta
+
+
+
+
+
+## Ongelma 2
+Tyyppi: Ajastushyökkäys
+Sijainti: login()
+Kuvaus:
+
+Kirjautuessa salasanan vertailuun käytetään "==". Tämä mahdollistaa ajastushyökkäyksen.
+
+Tämä ongelma täytyi korjata autentikointia korjattaessa, koska en osannut tehdä autentikointia
+ilman tämän heikkouden korjaamista. Tästä syystä tämä korjaus näkyy samassa commitissa autenti-
+koinnin korjaamisen kanssa.
+
+### Esimerkkihyökkäys:
+1) Kokeile kirjautua käyttäjälle sue
+2) Syötä salasana ja kellota
+3) Tulos: Salasana voidaan murtaa kellotuksen perusteella 
+
+### Korjaus:
+Käytetään salasanan tarkistamiseen kirjastoa.
+
+Commit: <git hash>
+
+Korjasin tämän heikkouden käyttämällä werkzeug.security kirjastoa. Hashasin salasanat ja lisäsin
+niihin salaisen merkkijonon. Tämän seurauksena ajastamisen pitäisi olla huomattavasti haastavampaa,
+kuin "=="-vertailulla. En saanut mistään selville, että onko check_password_hash sellainen funktio, 
+joka tekee ajastuksen täysin mahdottomaksi.
+
+### Pisteet(2pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
+
+
 
 
 ## Ongelma 1
@@ -40,6 +111,30 @@ Korjaus estää uuden polkuinjektion syntymisen, sillä uutta reittiä luotaessa
 
 
 ## Ongelma 2
+Tyyppi: Shell-injektio
+Sijainti: checkerLoop()
+Kuvaus:
+
+filename = queue.get(). Käyttäjä voi antaa filenameksi mitä vain, jolloin syntyy injektiolle mahdollisuus,
+sillä filename syötetään suoraan shelli käskyyn. Tämä tapahtuu kohdassa:
+
+res = subprocess.run(
+            "file %s" % filename,
+            shell=True,
+            timeout=15,
+            stdout=subprocess.PIPE)
+
+### Esimerkkihyökkäys:
+1) Käyttäjä syöttää palvelimelle tiedoston, jonka nimi on: nimi | ls
+2) Tulos: Palvelin suorittaa |-merkin komennon
+
+### Korjaus:
+
+Commit: <git hash>
+
+
+
+## Ongelma 3
 Tyyppi: Polkuinjektio
 Sijainti: login()
 Kuvaus:
@@ -64,31 +159,3 @@ käyttäjänimien merkkejä olisi hyvä rajoittaa.
 ### Korjaus:
 
 Commit: <git hash>
-
-
-
-## Ongelma 3
-Tyyppi: Shell-injektio
-Sijainti: checkerLoop()
-Kuvaus:
-
-filename = queue.get(). Käyttäjä voi antaa filenameksi mitä vain, jolloin syntyy injektiolle mahdollisuus,
-sillä filename syötetään suoraan shelli käskyyn. Tämä tapahtuu kohdassa:
-
-res = subprocess.run(
-            "file %s" % filename,
-            shell=True,
-            timeout=15,
-            stdout=subprocess.PIPE)
-
-### Esimerkkihyökkäys:
-1) Käyttäjä syöttää palvelimelle tiedoston, jonka nimi on: nimi | ls
-2) Tulos: Palvelin suorittaa |-merkin komennon
-
-### Korjaus:
-
-Commit: <git hash>
-
-
-
-## Ongelma 4
