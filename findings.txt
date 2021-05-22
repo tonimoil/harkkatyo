@@ -74,6 +74,8 @@ joka tekee ajastuksen täysin mahdottomaksi.
 
 
 
+
+
 ## Ongelma 3
 Tyyppi: XSS-Hyökkäys
 Sijainti: Ympäri ohjelmaa
@@ -88,7 +90,7 @@ HTML:ää.
 3) Tulos: Ohjelma suorittaa nimeen syötetyn koodin.
 
 ### Korjaus:
-Commit: <git hash>
+Commit: 9ad61c7
 
 Syötetään HTML:n sekaan käyttäjän syötteet turvallisesti, eli korvataan:
 
@@ -121,7 +123,7 @@ kuitenkin suhteellisen sekainen ja vaikeasti laajennettavissa.
 
 
 
-## Ongelma 3
+## Ongelma 4
 Tyyppi: Shell-injektio
 Sijainti: checkerLoop()
 Kuvaus:
@@ -179,70 +181,3 @@ Commit: <git hash>
 
 
 
-
-
-
-
-
-
-
-## Ongelma 1
-Tyyppi:   Polkuinjektio
-Sijainti: delete_file()
-Kuvaus:
-
-Aliohjelmassa delete_file ei tarkasteta käyttäjän syöttämää polkua
-millään tavalla. Tämä mahdollistaa sen, että käyttäjä tuhoaa minkä
-tahansa tiedoston, esimerkiksi toisen käyttäjän tiedoston tai vaikkapa
-jonkin järjestelmätiedoston.
-
-### Esimerkkihyökkäys: 
-
-1) Kirjaudu sisään käyttäjänä "sam".
-2) Tee pyyntö /delete_file?file=../sue/tiedosto.txt
-3) Tulos: Suen tiedosto tuhotaan
-
-### Korjaus:
-
-Commit: <git hash>
-
-Korjasin tämän näin... 
-
-Korjaus toimii koska... 
-
-Korjaus estää uuden polkuinjektion syntymisen, sillä uutta reittiä luotaessa...
-
-### Pisteet(3pt)
-
-1pt vian löytämisestä
-1pt vian korjaamisesta
-1pt vikatyypin eliminoimisesta
-
-
-
-
-## Ongelma 3
-Tyyppi: Polkuinjektio
-Sijainti: login()
-Kuvaus:
-
-login-funktion autentikointi mahdollistaa kirjautumisen palvelimelle ilman perustettua tunnusta.
-Tämän lisäksi funkiosta löytyvä käyttäjän kansion polku mahdollistaa tämän seurauksena polkuinjektion.
-Molemmat seikat ovat epätoivottua toiminnallisuutta, joten login funktio tulee tehdä uudelleen.
-
-Hyökkäys toimii siitä syystä, että autentikointi on toteutettu todella huonosti. "if username" tarkistaa
-ensin, että onko käyttäjänimi syötetty. Tämän jälkeen tarkistetaan "if users.get(username) == password".
-Jos käyttäjänimeä ei ole perustettu, niin tämä ehtolause toteutuu.
-
-Tässä on lisäksi huomioitava se, että mikäli palvelimelle olisi mahdollista luoda käyttäjätunnuksia, niin
-hyökkääjä voisi tehdä uusia tunnuksia ja niiden kautta toteuttaa saman polkuinjektion. Tästä syystä myöskin
-käyttäjänimien merkkejä olisi hyvä rajoittaa.
-
-### Esimerkkihyökkäys:
-
-1) Syötetään osoite localhost:5000/login?user=../WebData/sue
-2) Tulos: Päästään palvelimelle ja käsiksi käyttäjän sue tiedostoihin
-
-### Korjaus:
-
-Commit: <git hash>

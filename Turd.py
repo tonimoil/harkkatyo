@@ -297,6 +297,16 @@ def upload_file():
     <a href="/logout">log out</a>
     '''
 
+def luo_hylatyt_nimet():
+    print(bad_file_log)
+    return render_template_string("""
+        <h1>Some files were rejected</h1>
+        {% for x in tiedostot %}
+            \n
+            <p>{{x}}</p>
+        {% endfor %}
+    """, tiedostot = bad_file_log)
+
 def luo_jaettu_lista():
     return render_template_string("""
         {% for x in tiedostot %}
@@ -354,8 +364,7 @@ def serve_file():
 
         rejects = ""
         if bad_file_log:
-            rejects = ("<h1>Some files were rejected</h1>"
-                       "<p>" + "\n".join(bad_file_log) + "</p>")
+            rejects = luo_hylatyt_nimet()
 
         return render_template_string('''
             <!doctype html>
