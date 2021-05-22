@@ -21,7 +21,7 @@ kirjautumista.
 ### Korjaus:
 Tehdään järjestelmään autentikointi.
 
-Commit: <git hash>
+Commit: 0536511
 
 Korjasin tämän käyttämällä Flaskin Flask-Login moduulia. Moduulissa on session
 seurantaan toiminnot, jolloin sisään kirjautumista voidaan seurata luotettavasti.
@@ -46,7 +46,6 @@ kuka sivustolla on kirjautuneena.
 Tyyppi: Ajastushyökkäys
 Sijainti: login()
 Kuvaus:
-
 Kirjautuessa salasanan vertailuun käytetään "==". Tämä mahdollistaa ajastushyökkäyksen.
 
 Tämä ongelma täytyi korjata autentikointia korjattaessa, koska en osannut tehdä autentikointia
@@ -61,7 +60,7 @@ koinnin korjaamisen kanssa.
 ### Korjaus:
 Käytetään salasanan tarkistamiseen kirjastoa.
 
-Commit: <git hash>
+Commit: 0536511
 
 Korjasin tämän heikkouden käyttämällä werkzeug.security kirjastoa. Hashasin salasanat ja lisäsin
 niihin salaisen merkkijonon. Tämän seurauksena ajastamisen pitäisi olla huomattavasti haastavampaa,
@@ -72,6 +71,117 @@ joka tekee ajastuksen täysin mahdottomaksi.
 
 1pt vian löytämisestä
 1pt vian korjaamisesta
+
+
+
+## Ongelma 3
+Tyyppi: XSS-Hyökkäys
+Sijainti: Ympäri ohjelmaa
+Kuvaus:
+Käyttäjällä on erinäisissä kohdissa ohjelmaa mahdollisuus sijoittaa HTML:n sekaan omaa
+HTML:ää.
+
+
+### Esimerkkihyökkäys:
+1) Nimeä tiedosto esim. --><!-- ---> <img src=xxx:x onerror=javascript:alert('xss')> -->
+2) Lataa palvelimelle
+3) Tulos: Ohjelma suorittaa nimeen syötetyn koodin.
+
+### Korjaus:
+Commit: <git hash>
+
+Syötetään HTML:n sekaan käyttäjän syötteet turvallisesti, eli korvataan:
+
+'''<h1>File shared: %s</h1>''' % user_input ---> render_template_string('''{{user_input}} ''',
+user_input = user_input).
+
+Tällöin Flaskin autoescape estää koodin ajamisen. Tämä ei kuitenkaan toimi <a href=user_input>
+tilanteissa, minkä vuoksi user_content() funktiossa täytyy tehdä muita muutoksia.
+
+Lähestymistapani on tiedostojen nimien muuttaminen palvelimella siten, että niillä on käytännössä
+uniikki nimi.
+
+Tein seuraavan asian: luetaan tiedoston nimi ja asetetaan se <a href=user_input> hashattuna.
+Tämän seurauksena linkkeihin ei voi sijoittaa mitään haitallista. Ohjelmaa täytyi muokata siten,
+että käyttäjän syötteet mukautettiin myös hashiksi ja vertailu toteutetaan tätä kautta. Pyrin siihen,
+että jokaisessa paikassa kuitenkin näkyy alkuperäinen tiedostonimi ja järjestelmässä voi usealla
+eri käyttäjällä olla saman nimisiä tiedostoja, mutta niiden avulla ei voida poistaa toisen käyttäjän
+jakamia tiedostoja.
+
+Korjaukseni jälkeen en keksi tapoja toteuttaa nykyiseen järjestelmään XSS-hyökkäystä. Korjaus on
+kuitenkin suhteellisen sekainen ja vaikeasti laajennettavissa.
+
+### Pisteet(2pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
+
+
+
+
+
+
+## Ongelma 3
+Tyyppi: Shell-injektio
+Sijainti: checkerLoop()
+Kuvaus:
+filename = queue.get(). Käyttäjä voi antaa filenameksi mitä vain, jolloin syntyy injektiolle mahdollisuus,
+sillä filename syötetään suoraan shelli käskyyn. Tämä tapahtuu kohdassa:
+
+res = subprocess.run(
+            "file %s" % filename,
+            shell=True,
+            timeout=15,
+            stdout=subprocess.PIPE)
+
+### Esimerkkihyökkäys:
+1) Käyttäjä syöttää palvelimelle tiedoston, jonka nimi on: nimi | ls
+2) Tulos: Palvelin suorittaa |-merkin jälkeisen komennon
+
+### Korjaus:
+
+Commit: <git hash>
+
+### Pisteet(3pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
+1pt vikatyypin eliminoimisesta
+
+
+
+
+
+## Ongelma x
+Tyyppi: 
+Sijainti: 
+Kuvaus:
+
+
+### Esimerkkihyökkäys:
+1) 
+
+### Korjaus:
+
+Commit: <git hash>
+
+### Pisteet(3pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
+1pt vikatyypin eliminoimisesta
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -108,29 +218,6 @@ Korjaus estää uuden polkuinjektion syntymisen, sillä uutta reittiä luotaessa
 1pt vian korjaamisesta
 1pt vikatyypin eliminoimisesta
 
-
-
-## Ongelma 2
-Tyyppi: Shell-injektio
-Sijainti: checkerLoop()
-Kuvaus:
-
-filename = queue.get(). Käyttäjä voi antaa filenameksi mitä vain, jolloin syntyy injektiolle mahdollisuus,
-sillä filename syötetään suoraan shelli käskyyn. Tämä tapahtuu kohdassa:
-
-res = subprocess.run(
-            "file %s" % filename,
-            shell=True,
-            timeout=15,
-            stdout=subprocess.PIPE)
-
-### Esimerkkihyökkäys:
-1) Käyttäjä syöttää palvelimelle tiedoston, jonka nimi on: nimi | ls
-2) Tulos: Palvelin suorittaa |-merkin komennon
-
-### Korjaus:
-
-Commit: <git hash>
 
 
 
