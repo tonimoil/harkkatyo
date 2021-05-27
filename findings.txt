@@ -90,7 +90,7 @@ HTML:ää.
 3) Tulos: Ohjelma suorittaa nimeen syötetyn koodin.
 
 ### Korjaus:
-Commit: 1441887
+Commit: 
 
 Syötetään HTML:n sekaan käyttäjän syötteet turvallisesti, eli korvataan:
 
@@ -98,19 +98,11 @@ Syötetään HTML:n sekaan käyttäjän syötteet turvallisesti, eli korvataan:
 user_input = user_input).
 
 Tällöin Flaskin autoescape estää koodin ajamisen. Tämä ei kuitenkaan toimi <a href=user_input>
-tilanteissa, minkä vuoksi user_content() funktiossa täytyy tehdä muita muutoksia.
+tilanteissa.
 
-Lähestymistapani on tiedostojen nimien muuttaminen palvelimella siten, että niillä on käytännössä
-uniikki nimi.
-
-Tein seuraavan asian: luetaan tiedoston nimi ja asetetaan se <a href=user_input> hashattuna.
-Tämän seurauksena linkkeihin ei voi sijoittaa mitään haitallista. Ohjelmaa täytyi muokata siten,
-että käyttäjän syötteet mukautettiin myös hashiksi ja vertailu toteutetaan tätä kautta. Pyrin siihen,
-että jokaisessa paikassa kuitenkin näkyy alkuperäinen tiedostonimi ja järjestelmässä voi usealla
-eri käyttäjällä olla saman nimisiä tiedostoja, mutta niiden avulla ei voida poistaa toisen käyttäjän
-jakamia tiedostoja.
-
-Korjaukseni jälkeen en keksi tapoja toteuttaa nykyiseen järjestelmään XSS-hyökkäystä.
+<a href=user_input> tapaukset eivät kuitenkaan korjaannu tällä tavoin. Nämä korjasin muuttamalla
+user_inputit luvuiksi, jotka ohjelmakoodissa muutetaan ennen hakua takaisin jonoksi. Tällä
+tavoin hyökkääjällä ei ole mahdollisuutta tehdä XSS-hyökkäyksiä nykyisessä ohjelmassa.
 
 ### Pisteet(3pt)
 
@@ -140,7 +132,7 @@ res = subprocess.run(
 2) Tulos: Palvelin suorittaa |-merkin jälkeisen komennon
 
 ### Korjaus:
-Commit: d55cdf7
+Commit: f6822f9
 
 Tarkistetaan tiedosto jollakin toisella menetelmällä. Käytin tiedoston tarkistukseen python-magic moduulia.
 
@@ -188,8 +180,59 @@ Korjasin
 
 
 
+## Ongelma 6
+Tyyppi: Vääriä tiedostoja palvelimella
+Sijainti: upload_file()
+Kuvaus:
+
+Palvelimelle voidaan ladata tiedostoja, ja ne voivat olla siellä hetken. Tarkistuksen järjestyksestä
+johtuen palvelin altistuu hyökkäykselle: floodaamalla serveri tiedostoilla sinne voidaan ladata
+haitallisia tiedostoja ja ne eivät välttämättä ehdi poistua ennen väärinkäytöstä.
+
+Periaatteessa LIFO:n, eli last-in first-out tarkistuksen avulla palvelimelle voidaan ladata tiedosto
+ja se on siellä käytettävissä niin kauan, kun sinne lähetetään uusia tiedostoja. Ladattavien tiedostojen
+tiheys on riippuvainen threadin nopeudesta.
+
+### Esimerkkihyökkäys:
+1) Lataa palvelimelle haitallisia tiedostoja
+2) Ala floodaamaan palvelinta muilla tiedostoilla
+3) avaa haitallinen tiedosto osoitteessa: localhost:5000/user_content?file=jotain.html
+
+### Korjaus:
+
+Commit: <git hash>
+
+Korjasin ongelman laittamalla palvelimelle siirretyt tiedostot sellaiseen kansioon, johon
+käyttäjällä ei ole pääsyoikeutta. Ne siirretään tarkistuksen jälkeen käyttäjän kansioon.
+
+### Pisteet(1pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
 
 
 
+## Ongelma 7
+Tyyppi: Hard koodatut salasanat ja käyttäjänimet
+Sijainti: Pääohjelman alkupuolella
+Kuvaus:
 
+Hard koodatut salasanat aiheuttavat tietoturvariskin niissä tapauksissa, joissa lähdekoodi
+sattuu vuotamaan.
+Esim. https://www.beyondtrust.com/resources/glossary/hardcoded-embedded-passwords
 
+### Esimerkkihyökkäys:
+1) Saa lähdekoodi jollain keinolla käsiisi
+2) Hyödynnä vuodetut tiedot
+
+### Korjaus:
+
+Commit: <git hash>
+
+Korjasin ongelman tekemällä kirjautumissivun. Salasanat tallennetaan kryptattuna tietokantaan,
+jolloin selkokielisiä salasanoja ei ole saatavilla.
+
+### Pisteet(1pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta
