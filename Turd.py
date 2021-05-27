@@ -6,6 +6,7 @@ import queue
 import subprocess
 import threading
 import time
+import magic
 import sys #logaamista varten
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -68,15 +69,9 @@ def checkerLoop(queue):
         """
     while True:
         filename = queue.get()
-        res = subprocess.run(
-            "file %s" % filename,
-            shell=True,
-            timeout=15,
-            stdout=subprocess.PIPE)
-        res = res.stdout.decode('utf-8')
-        print(res)
-        if not ("PNG image data" in res
-                or "JPEG image data" in res):
+        detected = magic.detect_from_filename(filename)
+        if not("image/png" in detected
+            or "image/jpeg" in detected):
             os.remove(filename)
             bad_file_log.add(filename)
         else:

@@ -168,8 +168,6 @@ Kuvaus:
 Sovelluksessa on käytetty paljon polkujen rakentamiseen jonojen liimailua. Tämä aiheuttaa heikkouksia, joiden
 seurauksena voidaan toteuttaa polkuinjektioita.
 
-path = configuration['web_root'] + '/' + username + "/" + user_file
-
 ### Esimerkkihyökkäys:
 1) Mikäli sivustoa laajennettaisiin ja käyttäjä voisi tehdä sinne tunnuksen, niin käyttäjänimellä ../lion
 päästäisiin käyttäjän lion tiedostoihin käsiksi. (Injektiota on vaikea demonstroida tässä kohtaa ohjelman
