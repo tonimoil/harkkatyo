@@ -67,11 +67,11 @@ niihin salaisen merkkijonon. Tämän seurauksena ajastamisen pitäisi olla huoma
 kuin "=="-vertailulla. En saanut mistään selville, että onko check_password_hash sellainen funktio, 
 joka tekee ajastuksen täysin mahdottomaksi.
 
-### Pisteet(2pt)
+### Pisteet(3pt)
 
 1pt vian löytämisestä
 1pt vian korjaamisesta
-
+1pt vikatyypin eliminoimisesta
 
 
 
@@ -110,14 +110,13 @@ että jokaisessa paikassa kuitenkin näkyy alkuperäinen tiedostonimi ja järjes
 eri käyttäjällä olla saman nimisiä tiedostoja, mutta niiden avulla ei voida poistaa toisen käyttäjän
 jakamia tiedostoja.
 
-Korjaukseni jälkeen en keksi tapoja toteuttaa nykyiseen järjestelmään XSS-hyökkäystä. Korjaus on
-kuitenkin suhteellisen sekainen ja vaikeasti laajennettavissa.
+Korjaukseni jälkeen en keksi tapoja toteuttaa nykyiseen järjestelmään XSS-hyökkäystä.
 
-### Pisteet(2pt)
+### Pisteet(3pt)
 
 1pt vian löytämisestä
 1pt vian korjaamisesta
-
+1pt vikatyypin eliminoimisesta
 
 
 
@@ -141,7 +140,7 @@ res = subprocess.run(
 2) Tulos: Palvelin suorittaa |-merkin jälkeisen komennon
 
 ### Korjaus:
-Commit: <git hash>
+Commit: d55cdf7
 
 Tarkistetaan tiedosto jollakin toisella menetelmällä. Käytin tiedoston tarkistukseen python-magic moduulia.
 
@@ -161,18 +160,26 @@ Tämä ei ole kuitenkaan kurssin asiaa, ja Shell-injektio on tällä tavoin este
 
 
 
-## Ongelma x
-Tyyppi: 
-Sijainti: 
+## Ongelma 5
+Tyyppi: Polkuinjektio
+Sijainti: Koko sovellus
 Kuvaus:
 
+Sovelluksessa on käytetty paljon polkujen rakentamiseen jonojen liimailua. Tämä aiheuttaa heikkouksia, joiden
+seurauksena voidaan toteuttaa polkuinjektioita.
+
+path = configuration['web_root'] + '/' + username + "/" + user_file
 
 ### Esimerkkihyökkäys:
-1) 
+1) Mikäli sivustoa laajennettaisiin ja käyttäjä voisi tehdä sinne tunnuksen, niin käyttäjänimellä ../lion
+päästäisiin käyttäjän lion tiedostoihin käsiksi. (Injektiota on vaikea demonstroida tässä kohtaa ohjelman
+parannusta, mutta injektioiden mahdollisuus on olemassa.)
 
 ### Korjaus:
 
 Commit: <git hash>
+
+Korjasin 
 
 ### Pisteet(3pt)
 

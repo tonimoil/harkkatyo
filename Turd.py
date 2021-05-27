@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_file, request, redirect, url_for, make_response, render_template_string
+from flask import Flask, send_file, request, redirect, url_for, make_response
 from flask_login import LoginManager, current_user, login_user, UserMixin, logout_user, login_required
 import yaml
 import queue
@@ -7,7 +7,6 @@ import subprocess
 import threading
 import time
 import sys #logaamista varten
-import magic
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -65,14 +64,19 @@ checker_queue = queue.LifoQueue(1000)   # Last-in-First-out queue for storing un
 def checkerLoop(queue):
     """ This checks each incoming file. If they are not PNG files they
         get deleted. This will protect against uploading HTML and XSS
-
         This will be run as a background thread
         """
     while True:
         filename = queue.get()
-        detected = magic.detect_from_filename(filename)
-        if not ("image/png" in detected
-                or "image/jpeg" in detected):
+        res = subprocess.run(
+            "file %s" % filename,
+            shell=True,
+            timeout=15,
+            stdout=subprocess.PIPE)
+        res = res.stdout.decode('utf-8')
+        print(res)
+        if not ("PNG image data" in res
+                or "JPEG image data" in res):
             os.remove(filename)
             bad_file_log.add(filename)
         else:
@@ -86,7 +90,6 @@ t.start()
 @app.route('/login')
 def login():
     """ This route allows user to log in
-
         If user gives a filename that file is sent to user, otherwise
         user is shown a file listing
     """
@@ -144,15 +147,13 @@ def logout():
     """ This will log out the current user """
     username = current_user.username
     logout_user()
-
-    return render_template_string(
-        '''
-        <!doctype html>
-        <title>Log out</title>
-        <h1>System log out</h1>
-        User {{username}} has been logged out
-        ''', username=username
-    )
+    resp = make_response('''
+            <!doctype html>
+            <title>Log out</title>
+            <h1>System log out</h1>
+            User %s has been logged out
+            ''' % username)
+    return resp
 
 
 def checkPath(path):
@@ -172,35 +173,24 @@ def share_file():
 
     user_file = request.args.get('file')
 
-    tiedoston_nimi = ""
+    checkPath(path+"/"+user_file)
 
-    username = current_user.username
-    path = configuration['web_root'] + "/" + username
-    files = os.listdir(path)
+    shared_files[user_file] = path+"/"+user_file
 
-    for file in files:
-        if str(hash(file)) == user_file:
-            tiedoston_nimi = file
-
-    checkPath(path+"/"+tiedoston_nimi)
-
-    shared_files[tiedoston_nimi] = path+"/"+tiedoston_nimi
-
-    return render_template_string('''
+    return '''
         <!doctype html>
         <title>File shared</title>
-        <h1>File shared: {{user_file}}</h1>
+        <h1>File shared: %s</h1>
         <a href="/user_content">back to files</a>
         <br>
         <a href="/logout">log out</a>
-        ''', user_file=tiedoston_nimi)
+        ''' % user_file
 
 
 @app.route('/delete_file')
 @login_required
 def delete_file():
     """ This route handler will allow users to delete files.
-
         If the file is '*' all user files are deleted
     """
 
@@ -214,43 +204,30 @@ def delete_file():
         files = os.listdir(path)
         for file in files:
             os.remove(path + '/' + file)
-        return render_template_string('''
+        return '''
         <!doctype html>
         <title>File deleted</title>
-        <h1>File Deleted: {{files}}</h1>
+        <h1>File Deleted: %s</h1>
         <a href="/user_content">back to files</a>
         <br>
         <a href="/logout">log out</a>
-        ''', files=files)
+        ''' % files
     else:
-        files = os.listdir(path)
-        tiedosto = ""
-        for file in files:
-            if user_file == str(hash(file)):
-                path = configuration['web_root'] + "/" + username + "/" + file
-                for key, value in shared_files.items():
-                    if key == file:
-                        if value == path:
-                            del shared_files[key]
-                            break
-                os.remove(path)
-                tiedosto = file
-        print(tiedosto)
-        return render_template_string('''
+        os.remove(configuration['web_root'] + "/" + username + "/" + user_file)
+        return '''
         <!doctype html>
         <title>File deleted</title>
-        <h1>File Deleted: {{user_file}}</h1>
+        <h1>File Deleted: %s</h1>
         <a href="/user_content">back to files</a>
         <br>
         <a href="/logout">log out</a>
-        ''', user_file=tiedosto)
+        ''' % user_file
 
 
 @app.route('/upload_file', methods=['GET', 'POST'])
 @login_required
 def upload_file():
     """ This route handler will allow users to upload files
-
         If the request method is POST file is being uploaded. Otherwise
         we show a file upload prompt
     """
@@ -293,58 +270,18 @@ def upload_file():
     <a href="/logout">log out</a>
     '''
 
-def luo_hylatyt_nimet():
-    print(bad_file_log)
-    return render_template_string("""
-        <h1>Some files were rejected</h1>
-        {% for x in tiedostot %}
-            \n
-            <p>{{x}}</p>
-        {% endfor %}
-    """, tiedostot = bad_file_log)
-
-def luo_jaettu_lista():
-    return render_template_string("""
-        {% for x in tiedostot %}
-            {% if not x in suspicious_file_log %}
-                <a href='/user_content?file={{hash(x)}}'>{{x}}</a>
-            {% endif %}
-        {% endfor %}
-    """, tiedostot = shared_files, suspicious_file_log = suspicious_file_log, hash = hash)
-
-def luo_lista(tiedostot):
-    return render_template_string("""
-        {% for x in tiedostot %}
-            {% if not x in suspicious_file_log %}
-                <a href='/user_content?file={{hash(x)}}'>{{x}}</a>
-                <a href='/delete_file?file={{hash(x)}}'> (delete)</a>
-                <a href='/share_file?file={{hash(x)}}'> (share)</a>
-            {% endif %}
-        {% endfor %}
-    """, tiedostot = tiedostot, suspicious_file_log = suspicious_file_log, hash = hash)
 
 @app.route('/user_content')
 @login_required
 def serve_file():
     """ This route allows fetching user files
-
         If user gives a filename that file is sent to user, otherwise
         user is shown a file listing
     """
     username = current_user.username
     if not username: return redirect(url_for('login'))
 
-    user_file_hashed = request.args.get('file')
-    user_file = ""
-
-    username = current_user.username
-    path = configuration['web_root'] + "/" + username
-    files = os.listdir(path)
-    
-    for x in files:
-        if user_file_hashed == str(hash(x)):
-            user_file = str(x)
-
+    user_file = request.args.get('file')
     if user_file:
         shared = shared_files.get(user_file)
         if shared:
@@ -355,26 +292,39 @@ def serve_file():
             return send_file(path)
     else:
         files = os.listdir(configuration['web_root'] + "/" + username)
-        link_list = luo_lista(files)
-        shared_list = luo_jaettu_lista()
+        link_list = "\n".join([
+            """<a href='/user_content?file=%s'>%s</a>
+               <a href='/delete_file?file=%s'> (delete)</a>
+               <a href='/share_file?file=%s'> (share)</a>
+            """
+            % (f, f, f, f) for f in files
+            if not f in suspicious_file_log  # Remove suspicious files
+        ])
+
+        shared_list = "\n".join([
+            """<a href='/user_content?file=%s'>%s</a>
+            """
+            % (f,f) for f in shared_files
+            if not f in suspicious_file_log  # Remove suspicious files
+        ])
 
         rejects = ""
         if bad_file_log:
-            rejects = luo_hylatyt_nimet()
-
-        return render_template_string('''
+            rejects = ("<h1>Some files were rejected</h1>"
+                       "<p>" + "\n".join(bad_file_log) + "</p>")
+        return '''
             <!doctype html>
             <title>Files:</title>
             <h1>Your files</h1>
-            {{ link_list | safe }}
+            %s
             <p>Some files may still be uploading. Refresh the page.</p>
             <br>
-            {{ rejects | safe}}
+            %s
             <h1>Shared files</h1>
-            {{ shared_list | safe }}
+            %s
             <h1>Upload more files</h1>
             You can upload more files <a href="/upload_file">here</a>
             </form>
             <br>
             <a href="/logout">log out</a>
-            ''', link_list=link_list, rejects=rejects, shared_list=shared_list)
+            ''' % (link_list, rejects,shared_list)
