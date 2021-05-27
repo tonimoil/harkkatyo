@@ -40,8 +40,6 @@ kuka sivustolla on kirjautuneena.
 
 
 
-
-
 ## Ongelma 2
 Tyyppi: Ajastushyökkäys
 Sijainti: login()
@@ -75,7 +73,6 @@ joka tekee ajastuksen täysin mahdottomaksi.
 
 
 
-
 ## Ongelma 3
 Tyyppi: XSS-Hyökkäys
 Sijainti: Ympäri ohjelmaa
@@ -90,7 +87,7 @@ HTML:ää.
 3) Tulos: Ohjelma suorittaa nimeen syötetyn koodin.
 
 ### Korjaus:
-Commit: 
+Commit: 38f4050
 
 Syötetään HTML:n sekaan käyttäjän syötteet turvallisesti, eli korvataan:
 
@@ -109,8 +106,6 @@ tavoin hyökkääjällä ei ole mahdollisuutta tehdä XSS-hyökkäyksiä nykyise
 1pt vian löytämisestä
 1pt vian korjaamisesta
 1pt vikatyypin eliminoimisesta
-
-
 
 
 
@@ -161,9 +156,7 @@ Sovelluksessa on käytetty paljon polkujen rakentamiseen jonojen liimailua. Täm
 seurauksena voidaan toteuttaa polkuinjektioita.
 
 ### Esimerkkihyökkäys:
-1) Mikäli sivustoa laajennettaisiin ja käyttäjä voisi tehdä sinne tunnuksen, niin käyttäjänimellä ../lion
-päästäisiin käyttäjän lion tiedostoihin käsiksi. (Injektiota on vaikea demonstroida tässä kohtaa ohjelman
-parannusta, mutta injektioiden mahdollisuus on olemassa.)
+1) 
 
 ### Korjaus:
 

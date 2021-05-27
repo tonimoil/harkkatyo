@@ -7,11 +7,13 @@ import subprocess
 import threading
 import time
 import magic
-import sys #logaamista varten
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import math
 
+# Apufunktiota XSS-hyökkäyksiä varten, muutetaan näiden avulla nimet
+# numeroiksi, jolloin <a href=user_input> tyyppisiä hyökkäyksiä ei voida
+# toteuttaa
 def convertToNumber(s):
     return int.from_bytes(s.encode(), 'little')
 
@@ -27,13 +29,14 @@ with open("app.config.yaml") as stream:
 app = Flask(__name__)
 app.secret_key = 'xyz'
 
-## Luodaan tietokanta käyttäjien seuraamista varten sekä
-## Flask-Loginin toimintaa varten
+# Luodaan tietokanta käyttäjien seuraamista varten sekä
+# Flask-Loginin toimintaa varten
 app.config['SQLACLHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 db = SQLAlchemy(app)
 
 login_manager = LoginManager(app)
 
+# Tehdään luokka käyttäjille, joka on peritty flaskin luokasta UserMixin
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -83,10 +86,6 @@ def checkerLoop(queue):
             bad_file_log.add(filename)
         else:
             suspicious_file_log.remove(os.path.basename(filename))
-
-def luoNumero(syote):
-
-    return hash()
 
 # Start the background checker thread
 t = threading.Thread(target=checkerLoop, args=(checker_queue, ))
@@ -277,6 +276,7 @@ def upload_file():
     <a href="/logout">log out</a>
     '''
 
+# Apufunktio jaettujen tiedostojen listan luomiseen
 def luoJaettu():
     return render_template_string('''
         {% for x in tiedostot %}
@@ -286,6 +286,7 @@ def luoJaettu():
         {% endfor %}
     ''', tiedostot=shared_files, suspicious_file_log=suspicious_file_log, convertToNumber = convertToNumber)
 
+# Apufunktio kiellettyjen tiedostojen listaamista varten
 def luoKielletyt():
     return render_template_string('''
         <h1>Some files were rejected</h1>
@@ -295,6 +296,7 @@ def luoKielletyt():
         {% endfor %}
     ''', tiedostot = bad_file_log)
 
+# Apufunktio omien tiedostojen näyttämistä varten
 def luoOmat(tiedostot):
     return render_template_string('''
         {% for x in tiedostot %}
@@ -305,7 +307,6 @@ def luoOmat(tiedostot):
             {% endif %}
         {% endfor %}
     ''', tiedostot=tiedostot, suspicious_file_log=suspicious_file_log, convertToNumber=convertToNumber)
-
 
 @app.route('/user_content')
 @login_required
