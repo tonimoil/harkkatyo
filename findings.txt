@@ -40,6 +40,8 @@ kuka sivustolla on kirjautuneena.
 
 
 
+
+
 ## Ongelma 2
 Tyyppi: Ajastushyökkäys
 Sijainti: login()
@@ -70,6 +72,8 @@ joka tekee ajastuksen täysin mahdottomaksi.
 1pt vian löytämisestä
 1pt vian korjaamisesta
 1pt vikatyypin eliminoimisesta
+
+
 
 
 
@@ -106,6 +110,8 @@ tavoin hyökkääjällä ei ole mahdollisuutta tehdä XSS-hyökkäyksiä nykyise
 1pt vian löytämisestä
 1pt vian korjaamisesta
 1pt vikatyypin eliminoimisesta
+
+
 
 
 
@@ -149,26 +155,52 @@ Tämä ei ole kuitenkaan kurssin asiaa, ja Shell-injektio on tällä tavoin este
 
 ## Ongelma 5
 Tyyppi: Polkuinjektio
-Sijainti: Koko sovellus
+Sijainti: Koko sovellus ja checkPath()
 Kuvaus:
 
-Sovelluksessa on käytetty paljon polkujen rakentamiseen jonojen liimailua. Tämä aiheuttaa heikkouksia, joiden
-seurauksena voidaan toteuttaa polkuinjektioita.
+Sovelluksessa on käytetty paljon polkujen rakentamiseen jonojen liimailua. Tämä aiheuttaa heikkouksia,
+joiden seurauksena voidaan toteuttaa polkuinjektioita. Lisäksi checkPathia käytetään väärissä kohdissa
+sekä polkujen normalisointi on unohtunut.
 
 ### Esimerkkihyökkäys:
-1) 
+Tässä kohtaa sovelluksen kehittämistä polkuinjektioiden toteuttaminen on suhteellisen haastavaa.
+Tämä johtuu siitä, että esimerkiksi käyttäjänimeä ei voida manipuloida. Kuitenkin keinoja, joita
+en itse havaitse, voi edelleen olla olemassa. Erityisesti käyttäjiä lisättäessä polkuinjektiot
+voisivat olla mahdollisia.
+
+1) Luo käyttäjä /lion
+2) Kirjaudu sisään  // vaihtoehtoisesti vaihda kekseistä username = /lion, (nykyisessä korjattu)
+3) Tulos: pääset käsiksi käyttäjän lion tiedostoihin
+
+Huom. tämä on mahdollista toteuttaa myös ilman käyttäjän luomista alkuperäisessä sovelluksessa
 
 ### Korjaus:
 
 Commit: <git hash>
 
-Korjasin 
+Vialliset käyttäjänimet täytyy estää, sillä kansiorakenteen koostuessa käyttäjänimestä ongelmaa on
+haastavaa korjata muulla tavalla. Toteutin tämän siten, että lisäsin login()-funktioon tarkistuksen
+nimelle, ja se kirjaa käyttäjän ulos, mikäli tunnuksessa on muita merkkejä, kuin aakkosia.
+
+Korjasin checkPathin tarkistamaan annetut polut siten, että checkPath ottaa käyttäjään liitetyn kansio-
+rakenteen ja vertaa sitä annettuun polkuun. Tässä käytetään hyväksi absoluuttisia polkuja.
+
+CheckPathia käytetään aina, kun polkuja käytetään. Oletusarvoisesti yhdenkään tiedoston ei pitäisi päästä
+ulos käyttäjän omasta kansiosta.
+
+Polkujen liimaamisen sijaan käytin os.path.join-funktiota. Lisäksi lisäsin rajoitteita tiedostojen
+nimeämiseen. Sovelluksessa ei voi enää olla jaettuna useita saman nimisiä tiedostoja, jolloin jaettujen
+tiedostojen ristiin meneminen ei ole mahdollista.
+
+Lisäksi tiedostojen nimeämistä on rajoitettu. Käytin secure_filename-funktioita tiedoston nimen tarkistukseen.
+Mikäli nimi ei ole ok, niin tiedostoa ei voi ladata ja palvelin pyytää nimeämään sen uudelleen.
 
 ### Pisteet(3pt)
 
 1pt vian löytämisestä
 1pt vian korjaamisesta
 1pt vikatyypin eliminoimisesta
+
 
 
 
@@ -191,17 +223,21 @@ tiheys on riippuvainen threadin nopeudesta.
 2) Ala floodaamaan palvelinta muilla tiedostoilla
 3) avaa haitallinen tiedosto osoitteessa: localhost:5000/user_content?file=jotain.html
 
+Testasin tätä siten, että laitoin checkerLoopin nukkumaan komennolla Timer.sleep(). Tiedostoon voidaan
+mennä käsiksi säikeen nukkuessa.
+
 ### Korjaus:
 
 Commit: <git hash>
 
-Korjasin ongelman laittamalla palvelimelle siirretyt tiedostot sellaiseen kansioon, johon
-käyttäjällä ei ole pääsyoikeutta. Ne siirretään tarkistuksen jälkeen käyttäjän kansioon.
+
 
 ### Pisteet(1pt)
 
 1pt vian löytämisestä
 1pt vian korjaamisesta
+
+
 
 
 
@@ -222,8 +258,6 @@ Esim. https://www.beyondtrust.com/resources/glossary/hardcoded-embedded-password
 
 Commit: <git hash>
 
-Korjasin ongelman tekemällä kirjautumissivun. Salasanat tallennetaan kryptattuna tietokantaan,
-jolloin selkokielisiä salasanoja ei ole saatavilla.
 
 ### Pisteet(1pt)
 

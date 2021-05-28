@@ -9,6 +9,7 @@ import time
 import magic
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import math
 
 # Apufunktiota XSS-hyökkäyksiä varten, muutetaan näiden avulla nimet
@@ -43,12 +44,16 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True)
     password_hash = db.Column(db.String())
+    home_folder = db.Column(db.String(), unique=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password + 'pippuri')
 
     def check_password(self, password):
         return check_password_hash(self.password_hash,password + 'pippuri')
+
+    def set_home_folder(self):
+        self.home_folder = str(os.path.abspath(configuration['web_root'] + '/' + self.username))
 
 @login_manager.user_loader
 def load_user(id):
@@ -59,10 +64,13 @@ db.create_all()
 
 user1 = User(username='lion')
 user1.set_password('1')
+user1.set_home_folder()
 user2 = User(username="sue")
 user2.set_password('2')
-user3 = User(username="sam")
+user2.set_home_folder()
+user3 = User(username="lionn")
 user3.set_password('3')
+user3.set_home_folder()
 db.session.add(user1), db.session.add(user2), db.session.add(user3)
 db.session.commit()
 
@@ -106,6 +114,17 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user is not None and user.check_password(password):
             login_user(user)
+
+            if not (current_user.username).isalpha():
+                username = current_user.username
+                logout_user()
+                return render_template_string('''
+                    <!doctype html>
+                    <title>Log out</title>
+                    <h1>Your username can contain only letters</h1>
+                        User {{username}} has been logged out
+                    ''', username = username)
+
             resp = make_response("""
               <!doctype html>
               <title>You are logged in</title>
@@ -114,9 +133,8 @@ def login():
               """)
 
             # Create directory for user files
-            path = configuration['web_root'] + "/" + current_user.username
-            if not os.path.exists(path):
-                os.makedirs(path)
+            if not os.path.exists(current_user.home_folder):
+                os.makedirs(current_user.home_folder)
             
             return resp
 
@@ -163,7 +181,7 @@ def logout():
 
 def checkPath(path):
     """ This will check and prevent path injections """
-    if "../" in path:  #
+    if not os.path.abspath(path).startswith(current_user.home_folder):
         raise Exception("Possible Path-Injection")
 
 @app.route('/share_file')
@@ -171,22 +189,32 @@ def checkPath(path):
 def share_file():
     """ This route handler will allow users to share files
     """
-
-    username = current_user.username
-    if not username: return redirect(url_for('login'))
-    path = configuration['web_root'] + "/" + username
+    path = current_user.home_folder
 
     user_file = convertFromNumber(int(request.args.get('file')))
 
-    checkPath(path+"/"+user_file)
+    shared = shared_files.get(user_file)
 
-    shared_files[user_file] = path+"/"+user_file
-
-    return render_template_string(
+    if not shared:
+        path = os.path.join(current_user.home_folder, user_file)
+        checkPath(path)
+        shared_files[user_file] = path
+        return render_template_string(
         '''
         <!doctype html>
         <title>File shared</title>
         <h1>File shared: {{user_file}}</h1>
+        <a href="/user_content">back to files</a>
+        <br>
+        <a href="/logout">log out</a>
+        ''', user_file=user_file)
+    else:
+        return render_template_string(
+        '''
+        <!doctype html>
+        <title>File share failed</title>
+        <h1>File with this name has already been shared:{{user_file}}</h1>
+        <h3>Please rename your file before sharing!</h3>
         <a href="/user_content">back to files</a>
         <br>
         <a href="/logout">log out</a>
@@ -202,14 +230,18 @@ def delete_file():
 
     username = current_user.username
     if not username: return redirect(url_for('login'))
-    path = configuration['web_root'] + "/" + username
 
-    user_file = convertFromNumber(int(request.args.get('file')))
-
-    if user_file == '*':
-        files = os.listdir(path)
+    if request.args.get('file') == '*':
+        files = os.listdir(current_user.home_folder)
         for file in files:
-            os.remove(path + '/' + file)
+            path = os.path.join(current_user.home_folder, file)
+            checkPath(path)
+            os.remove(path)
+
+            shared = shared_files.get(file)
+            if shared == path:
+                shared_files.pop(file)
+
         return render_template_string('''
         <!doctype html>
         <title>File deleted</title>
@@ -219,7 +251,13 @@ def delete_file():
         <a href="/logout">log out</a>
         ''', files = files)
     else:
-        os.remove(configuration['web_root'] + "/" + username + "/" + user_file)
+        user_file = convertFromNumber(int(request.args.get('file')))
+        path = os.path.join(current_user.home_folder, user_file)
+        checkPath(path)
+        os.remove(path)
+        shared = shared_files.get(user_file)
+        if shared == path:
+            shared_files.pop(user_file)
         return render_template_string('''
         <!doctype html>
         <title>File deleted</title>
@@ -250,15 +288,27 @@ def upload_file():
             raise Exception('No selected file')
             return redirect(request.url)
         if thefile:
-            checkPath(thefile.filename)
-            target_path = path + '/' + thefile.filename
+            filename = secure_filename(thefile.filename)
 
-            # Mark the fle initially as suspicious. The checker thread will
-            # remove this flag
-            suspicious_file_log.add(thefile.filename)
-
-            thefile.save(target_path)
-            thefile.close()
+            try:
+                target_path = os.path.join(current_user.home_folder, filename)
+                checkPath(target_path)
+                suspicious_file_log.add(filename)
+                thefile.save(target_path)
+                thefile.close()
+            except:
+                return '''
+                <!doctype html>
+                <title>Upload new File</title>
+                <h1>Upload new File</h1>
+                <h3>Please rename the file!</h3>
+                <form method=post enctype=multipart/form-data>
+                <input type=file name=file>
+                <input type=submit value=Upload>
+                </form>
+                <br>
+                <a href="/logout">log out</a>
+                '''
 
             # The checker is slow so we run it in a background thread
             # for better user experience
@@ -328,11 +378,11 @@ def serve_file():
         if shared:
             return send_file(shared)
         else:
-            path = configuration['web_root'] + '/' + username + "/" + user_file
+            path = os.path.join(current_user.home_folder, user_file)
             checkPath(path)
             return send_file(path)
     else:
-        files = os.listdir(configuration['web_root'] + "/" + username)
+        files = os.listdir(current_user.home_folder)
         link_list = luoOmat(files)
 
         shared_list = luoJaettu()
