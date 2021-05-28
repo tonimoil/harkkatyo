@@ -1,3 +1,6 @@
+Github repo:
+https://github.com/tonimoil/harkkatyo
+
 # Toimii ainakin vasta asennetulla ubuntu 20 käyttiksellä.
 
 Mene kansioon, jonne purit .zip paketin
@@ -6,16 +9,18 @@ Mene kansioon, jonne purit .zip paketin
 
    $ sudo apt install python3-flask
 
-   $ pip3 install -r requirements
+   $ sudo apt install python3-pip
+
+   $ pip3 install -r requirements.txt
 
 Tämän jälkeen ohjelman voi suorittaa komennolla
    
    $ FLASK_APP=Turd.py flask run
 
-Mene osoitteeseen <localhost:5000/sign_up
+Mene osoitteeseen <localhost:5000/sign_up>
 
 Tee tunnus käyttäen nimessä ainoastaa aakkosia + anna salasana.
 Ohjaudut sivulle login, jonne voit syöttää käyttäjänimen + salasanan.
 
 Jos haluat tehdä useamman tunnuksen, niin mene sign_up sivulle ja toista.
-Et kuitenkaan saa olla kirjautuneena sisään, kun yrität mennä ko. sivulle.
+Et kuitenkaan voi olla kirjautuneena sisään, kun yrität mennä ko. sivulle.
