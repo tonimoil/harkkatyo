@@ -1,7 +1,7 @@
 ## Harjoitustyöraportti
 
 Palauttajat (max 3): Toni Moilanen
-Pisteitä yhteensä: 20?
+Pisteitä yhteensä: 22?
 
 ## Ongelma 1
 Tyyppi: Autentikointi
@@ -272,3 +272,23 @@ ja syöttää nimen + salasanan. Nimi saa kuitenkin sisältää vain aakkosia.
 1pt vian löytämisestä
 1pt vian korjaamisesta
 1pt vikatyypin eliminoimisesta
+
+
+
+## Ongelma 8
+Tyyppi: Riippuvuudet
+Sijainti: Pääohjelman alku
+Kuvaus:
+
+Osa riippuvuuksista oli haavoittuvaisia. (Pyaml, jinja2)
+
+### Korjaus:
+
+Commit: 9d79cf2
+
+Vaihdetaan riippuvuudet sellaisiksi, joista ei virallisesti olla havaittu ongelmia.
+
+### Pisteet(2pt)
+
+1pt vian löytämisestä
+1pt vian korjaamisesta

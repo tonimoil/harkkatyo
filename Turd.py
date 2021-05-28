@@ -24,7 +24,7 @@ def convertFromNumber(n):
 configuration = {}
 
 with open("app.config.yaml") as stream:
-    configuration = yaml.load(stream)
+    configuration = yaml.safe_load(stream)
 
 app = Flask(__name__)
 app.secret_key = 'xyz'
