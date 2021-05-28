@@ -1,7 +1,7 @@
 ## Harjoitustyöraportti
 
 Palauttajat (max 3): Toni Moilanen
-Pisteitä yhteensä: 0
+Pisteitä yhteensä: 20?
 
 ## Ongelma 1
 Tyyppi: Autentikointi
