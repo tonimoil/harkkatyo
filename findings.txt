@@ -228,13 +228,13 @@ mennä käsiksi säikeen nukkuessa.
 
 ### Korjaus:
 
-Commit: <git hash>
+Commit: 18f0fc6
 
 Siirretään tiedostot sellaiseen kansioon käsittelyn ajaksi, johon käyttäjällä ei ole mahdollista päästä
 käsiksi.
 
 
-### Pisteet(1pt)
+### Pisteet(2pt)
 
 1pt vian löytämisestä
 1pt vian korjaamisesta
@@ -244,7 +244,7 @@ käsiksi.
 
 
 ## Ongelma 7
-Tyyppi: Hard koodatut salasanat ja käyttäjänimet
+Tyyppi: Hard koodatut tunnistautumistiedot
 Sijainti: Pääohjelman alkupuolella
 Kuvaus:
 
@@ -260,8 +260,15 @@ Esim. https://www.beyondtrust.com/resources/glossary/hardcoded-embedded-password
 
 Commit: <git hash>
 
+Tehdään palveluun kirjautusmissivu. Salataan käyttäjän palveluun syöttämä salasana, jolloin
+selkokielistä tietoa salasanoista ei ole saatavilla.
 
-### Pisteet(1pt)
+Palvelua voi kokeilla siten, että menee osoitteeseen:
+localhost:5000/sign_up
+ja syöttää nimen + salasanan. Nimi saa kuitenkin sisältää vain aakkosia.
+
+### Pisteet(3pt)
 
 1pt vian löytämisestä
 1pt vian korjaamisesta
+1pt vikatyypin eliminoimisesta

@@ -68,13 +68,7 @@ db.create_all()
 user1 = User(username='lion')
 user1.set_password('1')
 user1.set_home_folder()
-user2 = User(username="sue")
-user2.set_password('2')
-user2.set_home_folder()
-user3 = User(username="lionn")
-user3.set_password('3')
-user3.set_home_folder()
-db.session.add(user1), db.session.add(user2), db.session.add(user3)
+db.session.add(user1)
 db.session.commit()
 
 # Some global variables
@@ -105,6 +99,65 @@ def checkerLoop(queue):
 # Start the background checker thread
 t = threading.Thread(target=checkerLoop, args=(checker_queue, ))
 t.start()
+
+@app.route('/sign_up')
+def sign_up():
+    "This route allows user to create an account"
+    if current_user.is_authenticated:
+        return redirect('/user_content')
+
+    username = request.args.get('username')
+    password = request.args.get('password')
+    if username and password:
+        #Sallitaan nimissä vain aakkoset
+        if username.isalpha():
+            #Tarkistetaan, että onko jo olemassa käyttäjä
+            user = User.query.filter_by(username = username).first()
+
+            if user:
+                '''
+                <!doctype html>
+                <title>Sign up</title>
+                <h1>Sign up</h1>
+                <h3>Username already in use!</h3>
+                <form>
+                    <input type=text name=username>
+                    <input type=password name=password>
+                    <input type=submit value="Sign Up">
+                </form>
+                '''
+            
+            new_user = User(username = username)
+            new_user.set_password(password)
+            new_user.set_home_folder()
+            db.session.add(new_user)
+            db.session.commit()
+
+            return redirect('/login')
+        else:
+            return '''
+            <!doctype html>
+            <title>Sign up</title>
+            <h1>Sign up</h1>
+            <h3>Only alphabets allowed in the username!</h3>
+            <form>
+                <input type=text name=username>
+                <input type=password name=password>
+                <input type=submit value="Sign Up">
+            </form>
+            '''
+
+    else:
+        return '''
+        <!doctype html>
+        <title>Sign up</title>
+        <h1>Sign up</h1>
+        <form>
+            <input type=text name=username>
+            <input type=password name=password>
+            <input type=submit value="Sign Up">
+        </form>
+        '''
 
 @app.route('/login')
 def login():
