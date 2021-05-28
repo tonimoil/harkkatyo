@@ -35,6 +35,9 @@ app.secret_key = 'xyz'
 app.config['SQLACLHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 db = SQLAlchemy(app)
 
+if not os.path.exists(os.path.abspath(configuration['upload'])):
+    os.makedirs(os.path.abspath(configuration['upload']))
+
 login_manager = LoginManager(app)
 
 # Tehdään luokka käyttäjille, joka on peritty flaskin luokasta UserMixin
@@ -87,13 +90,17 @@ def checkerLoop(queue):
         """
     while True:
         filename = queue.get()
-        detected = magic.detect_from_filename(filename)
+        # filename[0] == upload path
+        # filename[1] == target path
+        # filename[2] == filename
+        detected = magic.detect_from_filename(filename[0])
         if not("image/png" in detected
             or "image/jpeg" in detected):
-            os.remove(filename)
-            bad_file_log.add(filename)
+            os.remove(filename[0])
+            bad_file_log.add(filename[2])
         else:
-            suspicious_file_log.remove(os.path.basename(filename))
+            suspicious_file_log.remove(os.path.basename(filename[0]))
+            os.rename(filename[0], filename[1])
 
 # Start the background checker thread
 t = threading.Thread(target=checkerLoop, args=(checker_queue, ))
@@ -291,11 +298,13 @@ def upload_file():
             filename = secure_filename(thefile.filename)
 
             try:
-                target_path = os.path.join(current_user.home_folder, filename)
+                upload_path = os.path.abspath(os.path.join(configuration['upload'], filename))
+                target_path = os.path.abspath(os.path.join(current_user.home_folder, filename))
                 checkPath(target_path)
-                suspicious_file_log.add(filename)
-                thefile.save(target_path)
-                thefile.close()
+                if upload_path.startswith(os.path.abspath(configuration['upload'])):
+                    suspicious_file_log.add(filename)
+                    thefile.save(upload_path)
+                    thefile.close()
             except:
                 return '''
                 <!doctype html>
@@ -312,7 +321,7 @@ def upload_file():
 
             # The checker is slow so we run it in a background thread
             # for better user experience
-            checker_queue.put(target_path)
+            checker_queue.put([upload_path, target_path, filename])
             return redirect(url_for('serve_file'))
     return '''
     <!doctype html>

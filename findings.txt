@@ -176,7 +176,7 @@ Huom. tämä on mahdollista toteuttaa myös ilman käyttäjän luomista alkuper�
 
 ### Korjaus:
 
-Commit: <git hash>
+Commit: 22c4695
 
 Vialliset käyttäjänimet täytyy estää, sillä kansiorakenteen koostuessa käyttäjänimestä ongelmaa on
 haastavaa korjata muulla tavalla. Toteutin tämän siten, että lisäsin login()-funktioon tarkistuksen
@@ -215,8 +215,8 @@ johtuen palvelin altistuu hyökkäykselle: floodaamalla serveri tiedostoilla sin
 haitallisia tiedostoja ja ne eivät välttämättä ehdi poistua ennen väärinkäytöstä.
 
 Periaatteessa LIFO:n, eli last-in first-out tarkistuksen avulla palvelimelle voidaan ladata tiedosto
-ja se on siellä käytettävissä niin kauan, kun sinne lähetetään uusia tiedostoja. Ladattavien tiedostojen
-tiheys on riippuvainen threadin nopeudesta.
+ja se on siellä käytettävissä niin kauan, kun sinne lähetetään uusia tiedostoja. Ladatun tiedoston
+näkyvyys on riippuvainen siitä, kuinka nopeesti palvelin käsittelee saapuvat tiedostot.
 
 ### Esimerkkihyökkäys:
 1) Lataa palvelimelle haitallisia tiedostoja
@@ -230,6 +230,8 @@ mennä käsiksi säikeen nukkuessa.
 
 Commit: <git hash>
 
+Siirretään tiedostot sellaiseen kansioon käsittelyn ajaksi, johon käyttäjällä ei ole mahdollista päästä
+käsiksi.
 
 
 ### Pisteet(1pt)
