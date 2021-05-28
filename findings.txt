@@ -284,7 +284,7 @@ Osa riippuvuuksista oli haavoittuvaisia. (Pyaml, jinja2)
 
 ### Korjaus:
 
-Commit: 9d79cf2
+Commit: 406ced4
 
 Vaihdetaan riippuvuudet sellaisiksi, joista ei virallisesti olla havaittu ongelmia.
 
