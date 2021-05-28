@@ -5,7 +5,6 @@ import yaml
 import queue
 import subprocess
 import threading
-import time
 import magic
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -35,9 +34,11 @@ app.secret_key = 'xyz'
 app.config['SQLACLHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 db = SQLAlchemy(app)
 
+# Upload kansion perustaminen
 if not os.path.exists(os.path.abspath(configuration['upload'])):
     os.makedirs(os.path.abspath(configuration['upload']))
 
+# Flaskin loginia varten
 login_manager = LoginManager(app)
 
 # Tehdään luokka käyttäjille, joka on peritty flaskin luokasta UserMixin
@@ -55,21 +56,18 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash,password + 'pippuri')
 
+    # Asetetaan tietokantaan käyttäjälle polku
+    # Voidaan käyttää vertailussa apuna
     def set_home_folder(self):
         self.home_folder = str(os.path.abspath(configuration['web_root'] + '/' + self.username))
 
+#Perustetaan tietokanta
+db.create_all()
+
+#Flaskin loginia varten
 @login_manager.user_loader
 def load_user(id):
     return User.query.get(int(id))
-
-## Hard koodataan käyttäjät tällä tavalla
-db.create_all()
-
-user1 = User(username='lion')
-user1.set_password('1')
-user1.set_home_folder()
-db.session.add(user1)
-db.session.commit()
 
 # Some global variables
 bad_file_log = set()            # Set of known dangerous files in service
@@ -93,6 +91,8 @@ def checkerLoop(queue):
             os.remove(filename[0])
             bad_file_log.add(filename[2])
         else:
+            # Poistetaan hämärät tiedostot logista ja siirretään ne
+            # Upload kansiosta käyttäjän kansioon
             suspicious_file_log.remove(os.path.basename(filename[0]))
             os.rename(filename[0], filename[1])
 
@@ -115,7 +115,7 @@ def sign_up():
             user = User.query.filter_by(username = username).first()
 
             if user:
-                '''
+                return'''
                 <!doctype html>
                 <title>Sign up</title>
                 <h1>Sign up</h1>
@@ -126,11 +126,11 @@ def sign_up():
                     <input type=submit value="Sign Up">
                 </form>
                 '''
-            
+            # Luodaan uusi käyttäjä
             new_user = User(username = username)
+            db.session.add(new_user)
             new_user.set_password(password)
             new_user.set_home_folder()
-            db.session.add(new_user)
             db.session.commit()
 
             return redirect('/login')
@@ -165,16 +165,25 @@ def login():
         If user gives a filename that file is sent to user, otherwise
         user is shown a file listing
     """
+    # Jos käyttäjä on kirjautunut, niin ohjataan user_contentiin
     if current_user.is_authenticated:
         return redirect('/user_content')
 
     username = request.args.get('user')
     password = request.args.get('password')
+    
+    # Jos molemmat syötetty, niin katsotaan, että onko salasana ja käyttäjätunnus
+    # yhdenmukaiset
     if username and password:
         user = User.query.filter_by(username=username).first()
         if user is not None and user.check_password(password):
+
+            # Kirjataan onnistunut käyttäjä flaskin-loginiin
             login_user(user)
 
+            # Tarkistetaan, että onko käyttäjänimessä ainostaan aakkosia
+            # -> laiska tapa estää rikkinäiset tiedostopolut
+            # Kirjataan käyttäjä ulos, mikä on muuta kuin aakkosia
             if not (current_user.username).isalpha():
                 username = current_user.username
                 logout_user()
@@ -251,10 +260,15 @@ def share_file():
     """
     path = current_user.home_folder
 
+    # Muutetaan syötetty numero jonoksi
     user_file = convertFromNumber(int(request.args.get('file')))
 
+    # Haetaan jaetuista tiedostoista käyttäjän antama tiedosto
     shared = shared_files.get(user_file)
 
+    # Jos tiedostoa ei ole jo jaettu, niin jaetaan annettu tiedosto
+    # Käyttäjä voi jakaa vain omia tiedostoja, sillä tiedoston täytyy
+    # olla @ current_user.home_folder
     if not shared:
         path = os.path.join(current_user.home_folder, user_file)
         checkPath(path)
@@ -268,6 +282,9 @@ def share_file():
         <br>
         <a href="/logout">log out</a>
         ''', user_file=user_file)
+    # Jos saman niminen tiedosto on jo jaettu, niin käyttäjää pyydetään
+    # nimeämään tiedosto uudelleen
+    # Tämä tehty osittain alkuperäisessä ohjelmassa olevan bugin takia
     else:
         return render_template_string(
         '''
@@ -291,6 +308,10 @@ def delete_file():
     username = current_user.username
     if not username: return redirect(url_for('login'))
 
+    # Jos argumenttina on *, niin poistetaan kaikki tiedostot
+    # Poistetaan jaetut tiedostot myös jaettujen listalta
+    # Mikäli joku on jo jakanut saman nimisen tiedoston, niin
+    # sitä ei kuitenkaan poisteta
     if request.args.get('file') == '*':
         files = os.listdir(current_user.home_folder)
         for file in files:
@@ -311,6 +332,9 @@ def delete_file():
         <a href="/logout">log out</a>
         ''', files = files)
     else:
+        # Jos argumenttina on jokin muu luku, niin poistetaan se
+        # käyttäjän kansioista. Tähän pitäisi lisätä try, except rakenne,
+        # mutta ohjelma kyllä toimii, jos sitä ei yritetä käyttää väärin
         user_file = convertFromNumber(int(request.args.get('file')))
         path = os.path.join(current_user.home_folder, user_file)
         checkPath(path)
@@ -337,7 +361,6 @@ def upload_file():
     """
     username = current_user.username
     if not username: return redirect(url_for('login'))
-    path = configuration['web_root'] + "/" + username
 
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -350,10 +373,17 @@ def upload_file():
         if thefile:
             filename = secure_filename(thefile.filename)
 
+            # Kokeillaan viedä tiedosto tietokantaan
+            # secure_filename muuttaa tiedoston nimen esim. _ tyhjäksi
+            # minkä vuoksi pyydetään käyttäjää nimeämään tiedosto uudelleen
+            # mikäli se ei ole kelvollinen
             try:
                 upload_path = os.path.abspath(os.path.join(configuration['upload'], filename))
                 target_path = os.path.abspath(os.path.join(current_user.home_folder, filename))
                 checkPath(target_path)
+                
+                # Jos kaikki on ok, niin ladataan tiedosto palvelimelle
+                # Upload kansioon, johon käyttäjillä ei ole pääsyä
                 if upload_path.startswith(os.path.abspath(configuration['upload'])):
                     suspicious_file_log.add(filename)
                     thefile.save(upload_path)

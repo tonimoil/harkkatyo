@@ -258,7 +258,7 @@ Esim. https://www.beyondtrust.com/resources/glossary/hardcoded-embedded-password
 
 ### Korjaus:
 
-Commit: <git hash>
+Commit: 9d79cf2
 
 Tehdään palveluun kirjautusmissivu. Salataan käyttäjän palveluun syöttämä salasana, jolloin
 selkokielistä tietoa salasanoista ei ole saatavilla.
